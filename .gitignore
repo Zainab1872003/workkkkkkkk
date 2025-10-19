@@ -1,0 +1,115 @@
+# Python
+*.py[cod]
+*$py.class
+*.so
+__pycache__/
+*.pyc
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+myenv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Logs
+*.log
+logs/
+mcp_document.log
+mcp_*.log
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded Files
+uploads/
+upload/
+temp_uploads/
+
+# API Keys & Secrets
+secrets.json
+config.local.py
+credentials.json
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Distribution / packaging
+*.whl
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# OS Files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# FastAPI specific
+.cache/
+
+# Document Processing
+*.pdf.tmp
+*.docx.tmp
+processed_docs/
+
+# Vector Store Cache
+.vector_cache/
+embeddings_cache/
+
+# MCP Server Logs
+mcp_servers/*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
