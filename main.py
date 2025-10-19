@@ -22,6 +22,7 @@ from core.database import init_indexes, close_mongo_connection
 # Import routers
 from routers.health import router as health_router
 from routers.chat import router as chat_router
+from routers.storage import router as storage_router
 
 # Configure logging
 logging.basicConfig(
@@ -195,8 +196,9 @@ app.include_router(
     tags=["Chat"]
 )
 
+
 # Future routers (to be added):
-# app.include_router(storage_router, prefix="/api", tags=["Storage"])
+app.include_router(storage_router, prefix="/api", tags=["Storage"])
 # app.include_router(operations_router, prefix="/api", tags=["Operations"])
 
 # ============================================================================
