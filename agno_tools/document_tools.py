@@ -116,7 +116,7 @@ def upload_document(
             return f"❌ Error: No content could be extracted from {filename}"
         
         # Store in vector database
-        collection_name = f"user_{user_id}"
+        collection_name = f"rag_langchain"
         store = DocumentStore(collection_name=collection_name)
         vectorstore, document_id = store.store_documents(
             docs=chunks,
@@ -212,7 +212,7 @@ async def delete_document(user_id: str, filename: str) -> str:
         })
         
         # Delete from vector store
-        collection_name = f"user_{user_id}"
+        collection_name = f"rag_langchain"
         store = DocumentStore(collection_name=collection_name)
         store.delete_by_filename(filename)
         

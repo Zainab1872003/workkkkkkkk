@@ -23,6 +23,8 @@ from core.database import init_indexes, close_mongo_connection
 from routers.health import router as health_router
 from routers.chat import router as chat_router
 from routers.storage import router as storage_router
+from routers.operations import router as operations_router
+from routers.usecases import router as usecases_router
 
 # Configure logging
 logging.basicConfig(
@@ -196,10 +198,14 @@ app.include_router(
     tags=["Chat"]
 )
 
-
 # Future routers (to be added):
 app.include_router(storage_router, prefix="/api", tags=["Storage"])
-# app.include_router(operations_router, prefix="/api", tags=["Operations"])
+app.include_router(operations_router, prefix="/api", tags=["Operations"])
+app.include_router(
+    usecases_router,
+    prefix="/api",
+    tags=["Usecases"]
+)
 
 # ============================================================================
 # Root Endpoint Override (for custom branding)
