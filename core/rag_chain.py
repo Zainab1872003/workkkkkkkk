@@ -43,29 +43,29 @@ def get_retriever(collection_name: str = "rag_langchain", k: int = 5):
     
     return vectorstore.as_retriever(search_kwargs={"k": k})
 
-def get_llm(model: Optional[str] = None):
-    """
-    Configure Groq free LLM (e.g., Llama 3.1) via LangChain ChatOpenAI.
-    - Requires GROQ_API_KEY in your environment/config.
+# def get_llm(model: Optional[str] = None):
+#     """
+#     Configure Groq free LLM (e.g., Llama 3.1) via LangChain ChatOpenAI.
+#     - Requires GROQ_API_KEY in your environment/config.
     
-    Args:
-        model: Optional model name override.
+#     Args:
+#         model: Optional model name override.
     
-    Returns:
-        LangChain LLM instance.
-    """
-    key = GROQ_API_KEY
-    if not key:
-        raise ValueError("GROQ_API_KEY not set in config or .env")
-    model_name = model or GROQ_MODEL
+#     Returns:
+#         LangChain LLM instance.
+#     """
+#     key = GROQ_API_KEY
+#     if not key:
+#         raise ValueError("GROQ_API_KEY not set in config or .env")
+#     model_name = model or GROQ_MODEL
 
-    return ChatOpenAI(
-        model=model_name,
-        api_key=key,
-        base_url="https://api.groq.com/openai/v1",  # Groq API endpoint
-        temperature=0.1,
-        max_tokens=2048,
-    )
+#     return ChatOpenAI(
+#         model=model_name,
+#         api_key=key,
+#         base_url="https://api.groq.com/openai/v1",  # Groq API endpoint
+#         temperature=0.1,
+#         max_tokens=2048,
+#     )
 
 # Alternative LLM (commented; uncomment for OpenRouter fallback)
 # def get_llm(model: Optional[str] = None):
@@ -85,6 +85,23 @@ def get_llm(model: Optional[str] = None):
 #         temperature=0.1,
 #         max_tokens=2048,
 #     )
+
+def get_llm(model: Optional[str] = None):
+    """Configure OpenAI LLM for RAG chain."""
+    from core.config import settings
+    
+    key = settings.OPENAI_API_KEY
+    if not key:
+        raise ValueError("OPENAI_API_KEY not set in config or .env")
+    
+    model_name = model or settings.OPENAI_MODEL
+    return ChatOpenAI(
+        model=model_name,
+        api_key=key,
+        # No base_url needed for OpenAI (uses default)
+        temperature=0.1,
+        max_tokens=2048,
+    )
 
 # ---- Prompt for RAG ----
 RAG_PROMPT = PromptTemplate(

@@ -127,6 +127,7 @@ from agno.models.groq import Groq
 from core.config import settings
 from core.database import get_or_create_collection
 from agno_tools.document_tools import get_tools
+from core.llm_provider import get_llm_model
 
 router = APIRouter(tags=["Chat"])
 logger = logging.getLogger(__name__)
@@ -295,10 +296,7 @@ async def process_chat(
         # Create AGNO agent
         agent = Agent(
             name="Multimodel Assistant",
-            model=Groq(
-                id=settings.GROQ_MODEL,
-                api_key=settings.GROQ_API_KEY
-            ),
+            model=get_llm_model(),
             instructions=system_prompt,
             tools=tool_functions,
             markdown=True,

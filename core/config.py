@@ -5,6 +5,7 @@ Uses Groq for LLM and Zilliz Cloud (Milvus) for vector storage
 """
 import os
 from dotenv import load_dotenv
+from proto import Field
 from pydantic_settings import BaseSettings
 
 # Load environment variables
@@ -26,12 +27,17 @@ class Settings(BaseSettings):
     # ============================================================================
     # Groq Settings (Primary LLM - Free)
     # ============================================================================
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o"  # or "gpt-4-turbo", "gpt-3.5-turbo"
+    OPENAI_TEMPERATURE: float = 0.0
+    OPENAI_MAX_TOKENS: int = 4096
     GROQ_API_KEY: str = ""
     # GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
     GROQ_BASE_URL: str = "https://api.groq.com"
     GROQ_MODEL: str = "llama-3.1-8b-instant"
     GROQ_FAST_MODEL: str = "llama-3.1-8b-instant"
     
+    LLM_PROVIDER: str = "openai"  # Options: "openai" or "groq"
     # ============================================================================
     # MongoDB Settings
     # ============================================================================
