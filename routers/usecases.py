@@ -14,7 +14,7 @@ from core.database import get_or_create_collection
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/operations/usecases", tags=["Usecases"])
+router = APIRouter(prefix="/operations/usecases", tags=["Usecases"])
 
 
 # ============================================================================

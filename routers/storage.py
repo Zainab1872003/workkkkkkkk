@@ -21,7 +21,7 @@ from core.vectorstore import DocumentStore
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/storage", tags=["Storage"])
+router = APIRouter(prefix="/storage", tags=["Storage"])
 
 # Global flag to track upload processing status
 is_processing_upload = False

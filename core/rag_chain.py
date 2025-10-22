@@ -20,7 +20,7 @@ from core.embeddings import get_embeddings_model
 from core.vectorstore import init_milvus, DocumentStore  # Reuse for correct Milvus wrapper
 
 # ---- Retriever ----
-def get_retriever(collection_name: str = "rag_langchain", k: int = 3):
+def get_retriever(collection_name: str = "rag_langchain", k: int = 5):
     """
     Initialize Milvus vector store and return a LangChain retriever.
     

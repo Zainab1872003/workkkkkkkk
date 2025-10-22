@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str = ""
     # GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
     GROQ_BASE_URL: str = "https://api.groq.com"
-    GROQ_MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
     GROQ_FAST_MODEL: str = "llama-3.1-8b-instant"
     
     # ============================================================================

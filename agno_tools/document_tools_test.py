@@ -43,18 +43,22 @@ def query_documents(query: str, user_id: str = "default") -> str:
         if user_id == "default":
             collection_name = "rag_langchain"
         else:
-            collection_name = f"user_{user_id}"
+            collection_name = f"rag_langchain"
         
         # Get RAG chain and query
-        rag_chain = get_rag_chain(collection_name=collection_name)
+        rag_chain = get_rag_chain(collection_name="rag_langchain")
         result = rag_chain.invoke({"query": query})
         
         # Extract answer and sources
         answer = result.get("result", "No answer found in the documents.")
+        print("Answer:", answer)
         source_docs = result.get("source_documents", [])
-        
+        print("Source Documents:", source_docs)
+
         # Format response with sources
         response = f"{answer}\n\n**Sources:**\n"
+        print(response)
+        
         for i, doc in enumerate(source_docs[:3], 1):
             meta = doc.metadata
             filename = meta.get('filename', 'Unknown')
@@ -231,6 +235,44 @@ async def delete_document(user_id: str, filename: str) -> str:
 # TOOL 5: Calculate Bike Ijarah (Example finance tool)
 # ============================================================================
 
+# agno_tools/document_tools.py
+
+# Update the calculate_bike_ijarah function with strict typing
+
+# agno_tools/document_tools.py
+
+from pydantic import BaseModel, Field
+
+# ============================================================================
+# TOOL 5: Calculate Bike Ijarah with Pydantic Schema
+# ============================================================================
+
+class BikeIjarahInput(BaseModel):
+    """Input schema for bike Ijarah calculation"""
+    bike_price: float = Field(
+        ..., 
+        description="Total bike price in PKR (e.g., 500000)",
+        gt=0
+    )
+    down_payment: float = Field(
+        ..., 
+        description="Initial down payment in PKR (e.g., 100000)",
+        ge=0
+    )
+    tenure_months: int = Field(
+        ..., 
+        description="Loan tenure in months (e.g., 36)",
+        gt=0,
+        le=72
+    )
+    profit_rate: float = Field(
+        default=15.0,
+        description="Annual profit rate percentage (default: 15%)",
+        ge=0,
+        le=100
+    )
+
+
 def calculate_bike_ijarah(
     bike_price: float,
     down_payment: float,
@@ -240,20 +282,50 @@ def calculate_bike_ijarah(
     """
     Calculate Islamic bike financing (Ijarah) monthly installments.
     
+    This tool calculates the monthly payment for Islamic bike financing.
+    All numerical inputs must be provided as numbers, not strings.
+    
     Args:
-        bike_price: Total bike price in PKR
-        down_payment: Initial down payment in PKR
-        tenure_months: Loan tenure in months
-        profit_rate: Annual profit rate percentage (default: 15%)
+        bike_price (float): Total bike price in PKR. Example: 500000
+        down_payment (float): Initial down payment in PKR. Example: 100000
+        tenure_months (int): Loan tenure in months. Example: 36
+        profit_rate (float): Annual profit rate percentage. Default: 15.0
     
     Returns:
-        Detailed calculation breakdown with monthly installment
+        str: Detailed calculation breakdown with monthly installment
     
-    Example:
-        calculate_bike_ijarah(500000, 100000, 36, 15.0)
+    Examples:
+        >>> calculate_bike_ijarah(500000, 100000, 36, 15.0)
+        >>> calculate_bike_ijarah(750000, 150000, 48, 12.5)
     """
     try:
         logger.info(f"💰 Tool: calculate_bike_ijarah")
+        logger.info(f"   Inputs: price={bike_price}, down={down_payment}, months={tenure_months}, rate={profit_rate}")
+        
+        # Type conversion with validation
+        bike_price = float(bike_price)
+        down_payment = float(down_payment)
+        tenure_months = int(tenure_months)
+        profit_rate = float(profit_rate)
+        
+        # Business logic validation
+        if bike_price <= 0:
+            return "❌ Error: Bike price must be greater than zero"
+        
+        if down_payment < 0:
+            return "❌ Error: Down payment cannot be negative"
+        
+        if down_payment >= bike_price:
+            return "❌ Error: Down payment must be less than bike price"
+        
+        if tenure_months <= 0:
+            return "❌ Error: Tenure must be at least 1 month"
+        
+        if tenure_months > 72:
+            return "❌ Error: Maximum tenure is 72 months"
+        
+        if profit_rate < 0 or profit_rate > 100:
+            return "❌ Error: Profit rate must be between 0% and 100%"
         
         # Calculate financing
         financed_amount = bike_price - down_payment
@@ -263,29 +335,36 @@ def calculate_bike_ijarah(
         
         # Format result
         result = f"""
-**🏍️ Bike Ijarah Calculation**
+**🏍️ Bike Ijarah Calculation Results**
 
 **Bike Details:**
-• Bike Price: PKR {bike_price:,.2f}
-• Down Payment: PKR {down_payment:,.2f}
-• Financed Amount: PKR {financed_amount:,.2f}
+• Bike Price: PKR {bike_price:,.0f}
+• Down Payment: PKR {down_payment:,.0f}
+• Financed Amount: PKR {financed_amount:,.0f}
 
 **Financing Terms:**
-• Profit Rate: {profit_rate}% per annum
-• Tenure: {tenure_months} months
+• Profit Rate: {profit_rate:.1f}% per annum
+• Tenure: {tenure_months} months ({tenure_months/12:.1f} years)
 
 **Payment Breakdown:**
 • Total Profit: PKR {total_profit:,.2f}
 • Total Amount Payable: PKR {total_amount:,.2f}
 • **Monthly Installment: PKR {monthly_installment:,.2f}** 💳
+
+**Summary:** You will pay PKR {monthly_installment:,.0f} per month for {tenure_months} months.
         """.strip()
         
-        logger.info("✅ Calculation complete")
+        logger.info(f"✅ Calculation complete - Monthly: PKR {monthly_installment:,.2f}")
         return result
         
+    except (ValueError, TypeError) as e:
+        logger.error(f"❌ Type conversion error: {e}")
+        return f"❌ Error: Invalid input types. All numbers must be provided as numeric values, not strings. Details: {str(e)}"
     except Exception as e:
-        logger.error(f"❌ Calculation error: {e}")
+        logger.error(f"❌ Calculation error: {e}", exc_info=True)
         return f"❌ Error calculating Ijarah: {str(e)}"
+
+
 
 
 # ============================================================================
