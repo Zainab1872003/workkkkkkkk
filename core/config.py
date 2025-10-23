@@ -52,14 +52,25 @@ class Settings(BaseSettings):
     MILVUS_USER: str = ""  # Empty for API key auth
     MILVUS_PASSWORD: str = ""  # Your Zilliz API token
     MILVUS_COLLECTION_NAME: str = "rag_langchain"
-    MILVUS_DIMENSION: int = 384
+    MILVUS_DIMENSION: int = 1536  # For OpenAI text-embedding-3-small
     MILVUS_METRIC_TYPE: str = "COSINE"
     
     # ============================================================================
     # Embedding Settings (Local - sentence-transformers)
-    # ============================================================================
-    EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
-    EMBEDDING_DIMENSION: int = 384
+    # # ============================================================================
+    # EMBEDDING_MODEL: str = "sentence-transformers/all-MiniLM-L6-v2"
+    # EMBEDDING_DIMENSION: int = 384
+    EMBEDDING_PROVIDER: str = "openai"  # Options: "openai" or "huggingface"
+    OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
+    EMBEDDING_DIMENSION: int = 1536  # For OpenAI text-embedding-3-small
+    
+    
+    RERANKER_ENABLED: bool = True
+    RERANKER_MODEL: str = "BAAI/bge-reranker-v2-m3"
+    RERANKER_TOP_K: int = 5  # Final documents
+    RERANKER_INITIAL_K: int = 20  # Initial retrieval
+    RERANKER_BATCH_SIZE: int = 32  # Batch processing
+    RERANKER_DEVICE: str = "auto"  # cuda, cpu, or auto
     
     # ============================================================================
     # Document Processing
@@ -95,6 +106,8 @@ MILVUS_PASSWORD = settings.MILVUS_PASSWORD
 MILVUS_COLLECTION_NAME = settings.MILVUS_COLLECTION_NAME
 MILVUS_DIMENSION = settings.MILVUS_DIMENSION
 MILVUS_METRIC_TYPE = settings.MILVUS_METRIC_TYPE
+
+
 
 # Validate critical settings
 if not settings.GROQ_API_KEY:

@@ -293,6 +293,7 @@ async def process_chat(
         
         logger.info(f"🔧 Loaded {len(tool_functions) if tool_functions else 0} tool(s)")
         
+        
         # Create AGNO agent
         agent = Agent(
             name="Multimodel Assistant",

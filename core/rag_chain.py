@@ -6,9 +6,15 @@ Updated for Milvus/Zilliz: Uses token auth, embedding_function, and reuses Docum
 """
 
 import os
-from typing import Optional
+from typing import Optional ,List
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+
+import logging
+from langchain_core.documents import Document
+from langchain_core.retrievers import BaseRetriever 
 
 from langchain.chains import RetrievalQA
+from core.config import settings
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI  # For Groq/OpenRouter compatibility
 
@@ -19,29 +25,158 @@ from core.config import (
 from core.embeddings import get_embeddings_model
 from core.vectorstore import init_milvus, DocumentStore  # Reuse for correct Milvus wrapper
 
-# ---- Retriever ----
+
+
+
+# ============================================================================
+# RETRIEVER WITH BGE RERANKING
+# ============================================================================
+
+logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# BGE RERANKED RETRIEVER (Proper LangChain Implementation)
+# ============================================================================
+
+class BGERerankedRetriever(BaseRetriever):
+    """
+    LangChain-compatible retriever with BGE reranking.
+    Inherits from BaseRetriever for proper integration.
+    """
+    
+    base_retriever: BaseRetriever
+    model_name: str = "BAAI/bge-reranker-v2-m3"
+    top_k: int = 5
+    batch_size: int = 32
+    
+    class Config:
+        arbitrary_types_allowed = True
+    
+    def _get_relevant_documents(
+        self,
+        query: str,
+        *,
+        run_manager: Optional[CallbackManagerForRetrieverRun] = None
+    ) -> List[Document]:
+        """
+        Retrieve documents and rerank them using BGE.
+        This method is called by LangChain's retrieval system.
+        """
+        from core.reranker import rerank_documents, batch_rerank_documents
+        
+        # Step 1: Get initial documents via vector search
+        docs = self.base_retriever.invoke(query)
+        logger.info(f"📄 Retrieved {len(docs)} initial documents")
+        
+        if not docs:
+            return []
+        
+        # Step 2: Rerank with BGE
+        try:
+            if len(docs) > self.batch_size:
+                reranked_docs = batch_rerank_documents(
+                    query=query,
+                    documents=docs,
+                    top_k=self.top_k,
+                    batch_size=self.batch_size,
+                    model_name=self.model_name
+                )
+            else:
+                reranked_docs = rerank_documents(
+                    query=query,
+                    documents=docs,
+                    top_k=self.top_k,
+                    model_name=self.model_name
+                )
+            
+            return reranked_docs
+            
+        except Exception as e:
+            logger.error(f"❌ Reranking failed: {e}")
+            logger.warning(f"⚠️ Falling back to top {self.top_k} from vector search")
+            return docs[:self.top_k]
+
+
+# ============================================================================
+# RETRIEVER WITH RERANKING
+# ============================================================================
+
 def get_retriever(collection_name: str = "rag_langchain", k: int = 5):
     """
-    Initialize Milvus vector store and return a LangChain retriever.
-    
-    Args:
-        collection_name: Milvus collection name (underscore for validity).
-        k: Number of top documents to retrieve.
+    Initialize Milvus retriever with optional BGE reranking.
     
     Returns:
-        LangChain retriever instance.
+        BaseRetriever instance (with or without reranking)
     """
-    embeddings = get_embeddings_model()
-    init_milvus(collection_name=collection_name)  # Ensures connection and collection setup
+    # Determine retrieval strategy
+    if settings.RERANKER_ENABLED:
+        initial_k = settings.RERANKER_INITIAL_K
+        final_k = settings.RERANKER_TOP_K
+        logger.info(f"🔍 Retriever: Fetch {initial_k} docs → Rerank to top {final_k} (BGE v2-m3)")
+    else:
+        initial_k = k
+        final_k = k
+        logger.info(f"🔍 Retriever: Fetch {initial_k} docs (no reranking)")
     
-    # Reuse DocumentStore for correct Milvus wrapper (avoids direct init arg errors)
+    # Initialize Milvus vector store
+    embeddings = get_embeddings_model()
+    init_milvus(collection_name=collection_name)
+    
+    # Reuse DocumentStore for correct Milvus wrapper
     store = DocumentStore(collection_name=collection_name)
-    vectorstore = store._create_langchain_wrapper()  # Handles embedding_function, token auth, schema
+    vectorstore = store._create_langchain_wrapper()
     
     if vectorstore is None:
-        raise ValueError(f"Failed to create Milvus vectorstore for collection '{collection_name}'")
+        raise ValueError(f"Failed to create Milvus vectorstore")
     
-    return vectorstore.as_retriever(search_kwargs={"k": k})
+    # Create base retriever
+    base_retriever = vectorstore.as_retriever(search_kwargs={"k": initial_k})
+    
+    # Wrap with BGE reranker if enabled
+    if settings.RERANKER_ENABLED:
+        try:
+            logger.info(f"✅ BGE Reranker enabled: {settings.RERANKER_MODEL}")
+            
+            return BGERerankedRetriever(
+                base_retriever=base_retriever,
+                model_name=settings.RERANKER_MODEL,
+                top_k=final_k,
+                batch_size=settings.RERANKER_BATCH_SIZE
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to enable reranking: {e}")
+            logger.warning("⚠️ Falling back to base retriever")
+            return base_retriever
+    
+    return base_retriever
+
+
+
+# ---- Retriever ----
+# def get_retriever(collection_name: str = "rag_langchain", k: int = 5):
+#     """
+#     Initialize Milvus vector store and return a LangChain retriever.
+    
+#     Args:
+#         collection_name: Milvus collection name (underscore for validity).
+#         k: Number of top documents to retrieve.
+    
+#     Returns:
+#         LangChain retriever instance.
+#     """
+#     embeddings = get_embeddings_model()
+#     init_milvus(collection_name=collection_name)  # Ensures connection and collection setup
+    
+#     # Reuse DocumentStore for correct Milvus wrapper (avoids direct init arg errors)
+#     store = DocumentStore(collection_name=collection_name)
+#     vectorstore = store._create_langchain_wrapper()  # Handles embedding_function, token auth, schema
+    
+#     if vectorstore is None:
+#         raise ValueError(f"Failed to create Milvus vectorstore for collection '{collection_name}'")
+    
+#     return vectorstore.as_retriever(search_kwargs={"k": k})
 
 # def get_llm(model: Optional[str] = None):
 #     """

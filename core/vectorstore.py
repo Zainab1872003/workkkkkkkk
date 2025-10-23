@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from langchain_milvus import Milvus
 from pymilvus import connections, Collection, CollectionSchema, FieldSchema, DataType, utility
-from core.embeddings import get_embeddings_model
+from core.embeddings import get_embeddings_model , get_embedding_dimension
 from core.config import (
     MILVUS_URI, MILVUS_USER, MILVUS_PASSWORD, MILVUS_COLLECTION_NAME,
     MILVUS_DIMENSION, MILVUS_METRIC_TYPE
@@ -29,6 +29,8 @@ class MilvusManager:
     """Professional Zilliz Cloud (Milvus) vector store manager."""
     
     def __init__(self, collection_name: str = MILVUS_COLLECTION_NAME, dimension: int = MILVUS_DIMENSION):
+        if dimension is None:
+            dimension = get_embedding_dimension()
         if not re.match(r'^[a-zA-Z0-9_]+$', collection_name):
             raise VectorStoreError(f"Invalid collection name '{collection_name}'. Use only letters, numbers, and underscores.")
         self.collection_name = collection_name
